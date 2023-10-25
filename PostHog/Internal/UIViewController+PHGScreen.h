@@ -1,8 +1,7 @@
 #include <TargetConditionals.h>
 
-#if !TARGET_OS_OSX
+#if TARGET_OS_IOS
 #import <UIKit/UIKit.h>
-#endif
 
 @interface UIViewController (PHGScreen)
 
@@ -12,3 +11,4 @@
 + (UIViewController *)phg_topViewController;
 
 @end
+#endif

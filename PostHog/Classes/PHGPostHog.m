@@ -1,5 +1,5 @@
 #import <objc/runtime.h>
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 #import "PHGPostHogUtils.h"
 #import "PHGPostHog.h"
 #import "UIViewController+PHGScreen.h"
@@ -14,6 +14,10 @@
 #import "PHGScreenPayload.h"
 #import "PHGAliasPayload.h"
 #import "PHGGroupPayload.h"
+
+#if TARGET_OS_IOS
+#import <UIKit/UIKit.h>
+#endif
 
 static PHGPostHog *__sharedInstance = nil;
 
@@ -54,6 +58,7 @@ static PHGPostHog *__sharedInstance = nil;
         self.runner = [[PHGMiddlewareRunner alloc] initWithMiddlewares:
                                                        [configuration.middlewares ?: @[] arrayByAddingObject:self.payloadManager]];
 
+#if TARGET_OS_IOS
         // Attach to application state change hooks
         NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 
@@ -73,11 +78,12 @@ static PHGPostHog *__sharedInstance = nil;
         if (configuration.recordScreenViews) {
             [UIViewController phg_swizzleViewDidAppear];
         }
+#endif
         if (configuration.captureInAppPurchases) {
             _storeKitCapturer = [PHGStoreKitCapturer captureTransactionsForPostHog:self];
         }
 
-#if !TARGET_OS_TV
+#if TARGET_OS_IOS
         if (configuration.capturePushNotifications && configuration.launchOptions) {
             NSDictionary *remoteNotification = configuration.launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey];
             if (remoteNotification) {
@@ -110,6 +116,7 @@ NSString *const PHGBuildKeyV2 = @"PHGBuildKeyV2";
     payload.notificationName = note.name;
     [self run:PHGEventTypeApplicationLifecycle payload:payload];
 
+#if TARGET_OS_IOS
     if ([note.name isEqualToString:UIApplicationDidFinishLaunchingNotification]) {
         [self _applicationDidFinishLaunchingWithOptions:note.userInfo];
     } else if ([note.name isEqualToString:UIApplicationWillEnterForegroundNotification]) {
@@ -117,6 +124,7 @@ NSString *const PHGBuildKeyV2 = @"PHGBuildKeyV2";
     } else if ([note.name isEqualToString: UIApplicationDidEnterBackgroundNotification]) {
       [self _applicationDidEnterBackground];
     }
+#endif
 }
 
 - (void)_applicationDidFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -156,8 +164,10 @@ NSString *const PHGBuildKeyV2 = @"PHGBuildKeyV2";
         @"from_background" : @NO,
         @"version" : currentVersion ?: @"",
         @"build" : currentBuild ?: @"",
+#if TARGET_OS_IOS
         @"referring_application" : launchOptions[UIApplicationLaunchOptionsSourceApplicationKey] ?: @"",
         @"url" : launchOptions[UIApplicationLaunchOptionsURLKey] ?: @"",
+#endif
     }];
 
 

@@ -1,6 +1,9 @@
 #import "PHGApplicationUtils.h"
 #import <Foundation/Foundation.h>
+
+#if TARGET_OS_IOS
 #import <UIKit/UIKit.h>
+#endif
 
 @implementation PHGApplicationUtils
 
@@ -15,6 +18,7 @@
     return sharedInstance;
 }
 
+#if TARGET_OS_IOS
 - (UIApplication *)sharedApplication
 {
     if (![UIApplication respondsToSelector:@selector(sharedApplication)])
@@ -52,6 +56,7 @@
 
     return result;
 }
+#endif
 
 @end
 

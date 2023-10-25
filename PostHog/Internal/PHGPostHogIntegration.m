@@ -1,6 +1,5 @@
 #include <sys/sysctl.h>
 
-#import <UIKit/UIKit.h>
 #import "PHGPostHog.h"
 #import "PHGPostHogUtils.h"
 #import "PHGPostHogIntegration.h"
@@ -16,6 +15,7 @@
 #import "PHGApplicationUtils.h"
 
 #if TARGET_OS_IOS
+#import <UIKit/UIKit.h>
 #import <CoreTelephony/CTCarrier.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #endif
@@ -54,7 +54,9 @@ static NSString *GetDeviceModel(void)
 @property (nonatomic, strong) NSMutableArray *queue;
 @property (nonatomic, strong) NSDictionary *_cachedStaticContext;
 @property (nonatomic, strong) NSURLSessionUploadTask *batchRequest;
+#if TARGET_OS_IOS
 @property (nonatomic, assign) UIBackgroundTaskIdentifier flushTaskID;
+#endif
 @property (nonatomic, strong) PHGReachability *reachability;
 @property (nonatomic, strong) NSTimer *flushTimer;
 @property (nonatomic, strong) dispatch_queue_t serialQueue;
@@ -86,7 +88,9 @@ static NSString *GetDeviceModel(void)
         self.cachedStaticContext = [self staticContext];
         self.serialQueue = phg_dispatch_queue_create_specific("com.posthog", DISPATCH_QUEUE_SERIAL);
         self.backgroundTaskQueue = phg_dispatch_queue_create_specific("com.posthog.backgroundTask", DISPATCH_QUEUE_SERIAL);
+#if TARGET_OS_IOS
         self.flushTaskID = UIBackgroundTaskInvalid;
+#endif
 
         [self dispatchBackground:^{
             // Check for previous queue data in NSUserDefaults and remove if present.
@@ -105,10 +109,12 @@ static NSString *GetDeviceModel(void)
                                 forMode:NSDefaultRunLoopMode];
         
 
+#if TARGET_OS_IOS
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(updateStaticContext)
                                                      name:UIApplicationWillEnterForegroundNotification
                                                    object:nil];
+#endif
     }
     return self;
 }
@@ -139,6 +145,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
         dict[@"$app_namespace"] = [[NSBundle mainBundle] bundleIdentifier] ?: @"";
     }
 
+#if TARGET_OS_IOS
     UIDevice *device = [UIDevice currentDevice];
 
     NSString *deviceType = nil;
@@ -161,15 +168,14 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
             deviceType = @"Desktop";
             break;
     }
-
-    dict[@"$device_manufacturer"] = @"Apple";
     if (deviceType != nil) dict[@"$device_type"] = deviceType;
-    dict[@"$device_model"] = GetDeviceModel();
     dict[@"$device_id"] = self.configuration.shouldSendDeviceID ? [[device identifierForVendor] UUIDString] : nil;
     dict[@"$device_name"] = [device model];
-
     dict[@"$os_name"] = device.systemName;
     dict[@"$os_version"] = device.systemVersion;
+#endif
+    dict[@"$device_manufacturer"] = @"Apple";
+    dict[@"$device_model"] = GetDeviceModel();
     
 #if TARGET_OS_IOS || TARGET_OS_TV
     NSArray<UIWindow *> *appWindows = [PHGApplicationUtils.sharedInstance windows];
@@ -298,6 +304,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
 {
     [self endBackgroundTask];
 
+#if TARGET_OS_IOS
     phg_dispatch_specific_sync(_backgroundTaskQueue, ^{
         id<PHGApplicationProtocol> application = [self.posthog configuration].application;
         if (application) {
@@ -307,6 +314,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
                                                           }];
         }
     });
+#endif
 }
 
 - (void)endBackgroundTask
@@ -315,6 +323,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
     // We should not dispatch to the same queue we use to flush events because it can cause deadlock
     // inside @synchronized(self) block for PHGIntegrationsManager as both events queue and main queue
     // attempt to call forwardSelector:arguments:options:
+#if TARGET_OS_IOS
     phg_dispatch_specific_sync(_backgroundTaskQueue, ^{
         if (self.flushTaskID != UIBackgroundTaskInvalid) {
             id<PHGApplicationProtocol> application = [self.posthog configuration].application;
@@ -325,6 +334,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
             self.flushTaskID = UIBackgroundTaskInvalid;
         }
     });
+#endif
 }
 
 - (NSString *)description

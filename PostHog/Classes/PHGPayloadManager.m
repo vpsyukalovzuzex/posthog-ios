@@ -1,4 +1,3 @@
-#import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import "PHGPostHogUtils.h"
 #import "PHGPostHog.h"
@@ -8,6 +7,10 @@
 #import "PHGUserDefaultsStorage.h"
 #import "PHGPayloadManager.h"
 #import "PHGPostHogIntegration.h"
+
+#if TARGET_OS_IOS
+#import <UIKit/UIKit.h>
+#endif
 
 NSString *PHGPostHogIntegrationDidStart = @"com.posthog.integration.did.start";
 static NSString *const PHGAnonymousIdKey = @"PHGAnonymousId";
@@ -79,12 +82,16 @@ static NSString *const kPHGAnonymousIdFilename = @"posthog.anonymousId";
     static NSDictionary *selectorMapping;
     static dispatch_once_t selectorMappingOnce;
     dispatch_once(&selectorMappingOnce, ^{
+#if TARGET_OS_IOS
         selectorMapping = @{
             UIApplicationDidEnterBackgroundNotification :
                 NSStringFromSelector(@selector(applicationDidEnterBackground)),
             UIApplicationWillTerminateNotification :
                 NSStringFromSelector(@selector(applicationWillTerminate)),
         };
+#else
+        selectorMapping = @{};
+#endif
     });
     SEL selector = NSSelectorFromString(selectorMapping[notificationName]);
     if (selector) {

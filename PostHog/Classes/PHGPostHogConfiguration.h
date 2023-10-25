@@ -1,15 +1,22 @@
 #import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
 
+#if TARGET_OS_IOS
+#import <UIKit/UIKit.h>
+#endif
+
+#if TARGET_OS_IOS
 @protocol PHGApplicationProtocol <NSObject>
 @property (nullable, nonatomic, assign) id<UIApplicationDelegate> delegate;
 - (NSUInteger)phg_beginBackgroundTaskWithName:(nullable NSString *)taskName expirationHandler:(void (^__nullable)(void))handler;
 - (void)phg_endBackgroundTask:(NSUInteger)identifier;
 @end
+#endif
 
 
+#if TARGET_OS_IOS
 @interface UIApplication (PHGApplicationProtocol) <PHGApplicationProtocol>
 @end
+#endif
 
 typedef NSMutableURLRequest *_Nonnull (^PHGRequestFactory)(NSURL *_Nonnull);
 
@@ -152,10 +159,12 @@ typedef NSMutableURLRequest *_Nonnull (^PHGRequestFactory)(NSURL *_Nonnull);
  */
 @property (nonatomic, strong, nullable) NSArray<id<PHGMiddleware>> *middlewares;
 
+#if TARGET_OS_IOS
 /**
  * Leave this nil for iOS extensions, otherwise set to UIApplication.sharedApplication.
  */
 @property (nonatomic, strong, nullable) id<PHGApplicationProtocol> application;
+#endif
 
 /**
  * A dictionary of filters to redact payloads before they are sent.

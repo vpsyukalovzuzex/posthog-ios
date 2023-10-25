@@ -1,7 +1,13 @@
 #import "PHGPostHogConfiguration.h"
 #import "PHGPostHog.h"
 
+#import <Foundation/Foundation.h>
 
+#if TARGET_OS_IOS
+#import <UIKit/UIKit.h>
+#endif
+
+#if TARGET_OS_IOS
 @implementation UIApplication (PHGApplicationProtocol)
 
 - (UIBackgroundTaskIdentifier)phg_beginBackgroundTaskWithName:(nullable NSString *)taskName expirationHandler:(void (^__nullable)(void))handler
@@ -15,6 +21,7 @@
 }
 
 @end
+#endif
 
 
 @interface PHGPostHogConfiguration ()
@@ -61,6 +68,7 @@
         self.payloadFilters = @{
             @"(fb\\d+://authorize#access_token=)([^ ]+)": @"$1((redacted/fb-auth-token))"
         };
+#if TARGET_OS_IOS
         Class applicationClass = NSClassFromString(@"UIApplication");
         if (applicationClass) {
 #pragma clang diagnostic push
@@ -68,6 +76,7 @@
             _application = [applicationClass performSelector:NSSelectorFromString(@"sharedApplication")];
 #pragma clang diagnostic pop
         }
+#endif
     }
     return self;
 }

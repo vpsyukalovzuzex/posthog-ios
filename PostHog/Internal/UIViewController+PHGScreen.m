@@ -4,6 +4,7 @@
 #import "PHGUtils.h"
 
 
+#if TARGET_OS_IOS
 @implementation UIViewController (PHGScreen)
 
 + (BOOL)isAppExtension {
@@ -11,9 +12,8 @@
     // Documented by <a href="https://goo.gl/RRB2Up">Apple</a>
   BOOL appExtension = [[[NSBundle mainBundle] bundlePath] hasSuffix:@".appex"];
   return appExtension;
-#elif TARGET_OS_OSX
-    return NO;
 #endif
+    return NO;
 }
 
 + (void)phg_swizzleViewDidAppear
@@ -100,3 +100,4 @@
 }
 
 @end
+#endif
